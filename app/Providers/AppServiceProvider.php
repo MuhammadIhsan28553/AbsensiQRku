@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\User; // <-- TAMBAHKAN INI
-use Illuminate\Support\Facades\Gate; // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL; // <-- WAJIB: Untuk perbaikan HTTPS
+use App\Models\User;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,9 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // TAMBAHKAN KODE GATE DI SINI
+        // 1. Definisi Hak Akses (Gate)
         Gate::define('isAdmin', function (User $user) {
             return $user->role === 'admin';
         });
+
+        // 2. Perbaikan Style Berantakan di Vercel (Force HTTPS)
+        // Kode ini memaksa Laravel menggunakan https:// saat di production
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }
