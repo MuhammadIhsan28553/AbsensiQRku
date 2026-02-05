@@ -22,22 +22,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 1. Definisi Hak Akses Admin
+        // 1. Definisi Hak Akses Admin (Gate)
         Gate::define('isAdmin', function (User $user) {
             return $user->role === 'admin';
         });
 
         // 2. Konfigurasi Khusus Production (Vercel)
         if ($this->app->environment('production')) {
-            // A. Paksa HTTPS agar CSS/JS tidak error
+            // A. Paksa HTTPS agar tampilan tidak berantakan
             URL::forceScheme('https');
 
-            // B. PERBAIKAN DATABASE SSL (Solusi Error 2002)
-            // Kita timpa konfigurasi database dengan path yang benar-benar ada saat runtime
-            // '/var/task' adalah root standar di Vercel Runtime
-            $caPath = '/var/task/storage/keys/ca.pem';
+            // B. PERBAIKAN DATABASE SSL (Wajib untuk Aiven/Vercel)
+            // Kita cari lokasi file sertifikat secara dinamis saat aplikasi berjalan
+            $caPath = base_path('storage/keys/ca.pem');
             
-            // Cek jika file ada, lalu update config database secara dinamis
+            // Jika file ketemu, kita paksa Laravel menggunakan path ini
             if (file_exists($caPath)) {
                 config(['database.connections.mysql.options.' . \PDO::MYSQL_ATTR_SSL_CA => $caPath]);
             }
