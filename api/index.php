@@ -13,7 +13,7 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 // === PERBAIKAN VERCEL (ULTIMATE FIX) ===
 
 // Daftar folder yang WAJIB ada di /tmp agar Laravel jalan
-// Kita buat semuanya sekarang biar tidak ada error "path not found" lagi
+// Folder ini dibuat di runtime karena /var/task (root) bersifat Read-Only
 $dirs = [
     '/tmp/storage/bootstrap/cache',
     '/tmp/storage/framework/views',
@@ -30,18 +30,21 @@ foreach ($dirs as $dir) {
     }
 }
 
-// Arahkan Storage Utama ke /tmp
+// A. Arahkan Storage Utama ke /tmp
 $app->useStoragePath('/tmp/storage');
 
-// Arahkan Cache Bootstrap ke /tmp
+// B. Arahkan Cache Bootstrap ke /tmp
+// Ini memberitahu Laravel untuk menyimpan file cache (services, packages, routes) di /tmp
 $app->useEnvironmentPath('/tmp');
 $tmpCachePath = '/tmp/storage/bootstrap/cache';
 
+// Set path khusus untuk file-file cache agar tidak ditulis ke folder asli
 $_ENV['APP_PACKAGES_CACHE'] = $tmpCachePath . '/packages.php';
 $_ENV['APP_SERVICES_CACHE'] = $tmpCachePath . '/services.php';
 $_ENV['APP_ROUTES_CACHE']   = $tmpCachePath . '/routes-v7.php';
 $_ENV['APP_EVENTS_CACHE']   = $tmpCachePath . '/events.php';
 
+// Pastikan environment variable terbaca oleh helper env() dan sistem
 putenv('APP_PACKAGES_CACHE=' . $_ENV['APP_PACKAGES_CACHE']);
 putenv('APP_SERVICES_CACHE=' . $_ENV['APP_SERVICES_CACHE']);
 putenv('APP_ROUTES_CACHE=' . $_ENV['APP_ROUTES_CACHE']);
