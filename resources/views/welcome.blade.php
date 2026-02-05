@@ -28,7 +28,7 @@
             <p class="text-lg text-gray-600 mb-8">
                 Solusi modern untuk mencatat kehadiran dengan mudah dan cepat menggunakan QR Code.
             </p>
-            <a href="#" class="px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700">
+            <a href="{{ route('login') }}" class="px-8 py-3 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700">
                 Mulai Absen Sekarang
             </a>
         </main>

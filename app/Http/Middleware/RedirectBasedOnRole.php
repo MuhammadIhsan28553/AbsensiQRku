@@ -20,6 +20,11 @@ class RedirectBasedOnRole
         if (Auth::check()) {
             $user = Auth::user();
 
+            // Jangan redirect jika sedang logout
+            if ($request->routeIs('logout')) {
+                return $next($request);
+            }
+
             // Lakukan redirect HANYA jika rolenya admin DAN belum berada di halaman admin
             if ($user->role === 'admin' && !$request->routeIs('admin.*')) {
                 // Arahkan ke dashboard admin yang baru
