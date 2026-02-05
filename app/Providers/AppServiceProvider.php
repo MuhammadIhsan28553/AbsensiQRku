@@ -29,15 +29,17 @@ class AppServiceProvider extends ServiceProvider
 
         // 2. Konfigurasi Khusus Production (Vercel)
         if ($this->app->environment('production')) {
-            // A. Paksa HTTPS agar tampilan tidak berantakan
+            // A. Paksa HTTPS agar tampilan (CSS/JS) tidak berantakan karena Mixed Content
             URL::forceScheme('https');
 
             // B. PERBAIKAN DATABASE SSL (Wajib untuk Aiven/Vercel)
-            // Kita cari lokasi file sertifikat secara dinamis saat aplikasi berjalan
+            // Kita cari lokasi file sertifikat secara dinamis saat aplikasi berjalan menggunakan base_path()
+            // Ini akan menghasilkan path absolut yang benar (misal: /var/task/user/storage/keys/ca.pem)
             $caPath = base_path('storage/keys/ca.pem');
             
-            // Jika file ketemu, kita paksa Laravel menggunakan path ini
+            // Cek apakah file benar-benar ada
             if (file_exists($caPath)) {
+                // Timpa konfigurasi database secara runtime agar menggunakan path yang valid
                 config(['database.connections.mysql.options.' . \PDO::MYSQL_ATTR_SSL_CA => $caPath]);
             }
         }
