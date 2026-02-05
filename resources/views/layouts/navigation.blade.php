@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false }" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -20,30 +20,56 @@
                             {{ __('Pengajuan Izin') }}
                         </x-nav-link>
                     @endif
+
                     @can('isAdmin')
                         <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                             {{ __('Dashboard') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                            {{ __('Manajemen Pengguna') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.shifts.index')" :active="request()->routeIs('admin.shifts.*')">
-                            {{ __('Manajemen Shift') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.schedules.index')" :active="request()->routeIs('admin.schedules.*')">
-                            {{ __('Penjadwalan') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.attendances.index')" :active="request()->routeIs('admin.attendances.*')">
-                            {{ __('Riwayat Absensi') }}
-                        </x-nav-link>
+
+                        <!-- Dropdown Master Data (Agar tidak penuh) -->
+                        <div class="hidden sm:flex sm:items-center sm:ms-6">
+                            <x-dropdown align="left" width="48">
+                                <x-slot name="trigger">
+                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-transparent hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                        <div>Master Data</div>
+                                        <div class="ms-1">
+                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </x-slot>
+                                <x-slot name="content">
+                                    <x-dropdown-link :href="route('admin.users.index')">{{ __('Manajemen Pengguna') }}</x-dropdown-link>
+                                    <x-dropdown-link :href="route('admin.shifts.index')">{{ __('Manajemen Shift') }}</x-dropdown-link>
+                                    <x-dropdown-link :href="route('admin.settings.show')">{{ __('Pengaturan') }}</x-dropdown-link>
+                                </x-slot>
+                            </x-dropdown>
+                        </div>
+
+                        <!-- Dropdown Operasional -->
+                        <div class="hidden sm:flex sm:items-center sm:ms-6">
+                            <x-dropdown align="left" width="48">
+                                <x-slot name="trigger">
+                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-transparent hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                                        <div>Operasional</div>
+                                        <div class="ms-1">
+                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </button>
+                                </x-slot>
+                                <x-slot name="content">
+                                    <x-dropdown-link :href="route('admin.schedules.index')">{{ __('Penjadwalan') }}</x-dropdown-link>
+                                    <x-dropdown-link :href="route('admin.leave.list')">{{ __('Manajemen Izin') }}</x-dropdown-link>
+                                    <x-dropdown-link :href="route('admin.attendances.index')">{{ __('Riwayat Absensi') }}</x-dropdown-link>
+                                </x-slot>
+                            </x-dropdown>
+                        </div>
+
                         <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index')">
                             {{ __('Laporan') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.leave.list')" :active="request()->routeIs('admin.leave.*')">
-                            {{ __('Manajemen Izin') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.settings.show')" :active="request()->routeIs('admin.settings.show')">
-                            {{ __('Pengaturan') }}
                         </x-nav-link>
                     @endcan
                 </div>
@@ -53,7 +79,7 @@
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-transparent hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -95,7 +121,7 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu (Mobile) -->
+    <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @if(Auth::user()->role === 'user')
@@ -106,36 +132,48 @@
                     {{ __('Pengajuan Izin') }}
                 </x-responsive-nav-link>
             @endif
+
             @can('isAdmin')
                 <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
+                
+                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                <div class="px-4 py-1 text-xs text-gray-400 uppercase font-semibold">Master Data</div>
+                
                 <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                     {{ __('Manajemen Pengguna') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.shifts.index')" :active="request()->routeIs('admin.shifts.*')">
                     {{ __('Manajemen Shift') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.settings.show')" :active="request()->routeIs('admin.settings.show')">
+                    {{ __('Pengaturan') }}
+                </x-responsive-nav-link>
+
+                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                <div class="px-4 py-1 text-xs text-gray-400 uppercase font-semibold">Operasional</div>
+
                 <x-responsive-nav-link :href="route('admin.schedules.index')" :active="request()->routeIs('admin.schedules.*')">
                     {{ __('Penjadwalan') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.attendances.index')" :active="request()->routeIs('admin.attendances.*')">
                     {{ __('Riwayat Absensi') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index')">
-                    {{ __('Laporan') }}
-                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.leave.list')" :active="request()->routeIs('admin.leave.*')">
                     {{ __('Manajemen Izin') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.settings.show')" :active="request()->routeIs('admin.settings.show')">
-                    {{ __('Pengaturan') }}
+
+                <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                
+                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index')">
+                    {{ __('Laporan') }}
                 </x-responsive-nav-link>
             @endcan
         </div>
 
         <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
+        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50">
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
