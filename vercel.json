@@ -6,6 +6,9 @@
     },
     "routes": [
         {
+            "handle": "filesystem"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
@@ -13,7 +16,9 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "true",
-        "APP_URL": "https://nama-project-kamu.vercel.app"
+        "APP_URL": "https://absensi-qr-ku.vercel.app",
+        "ASSET_URL": "https://absensi-qr-ku.vercel.app",
+        "VITE_APP_URL": "https://absensi-qr-ku.vercel.app"
     },
     "outputDirectory": "public"
 }
