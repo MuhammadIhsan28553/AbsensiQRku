@@ -10,14 +10,12 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
+                <!-- Navigation Links (Desktop) -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @if(Auth::user()->role === 'user')
-                        {{-- ... (link dashboard user) ... --}}
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                             {{ __('Dashboard') }}
                         </x-nav-link>
-                        {{-- LINK BARU UNTUK PENGGUNA --}}
                         <x-nav-link :href="route('leave.index')" :active="request()->routeIs('leave.*')">
                             {{ __('Pengajuan Izin') }}
                         </x-nav-link>
@@ -32,8 +30,6 @@
                         <x-nav-link :href="route('admin.shifts.index')" :active="request()->routeIs('admin.shifts.*')">
                             {{ __('Manajemen Shift') }}
                         </x-nav-link>
-
-                        {{-- DAN LINK INI --}}
                         <x-nav-link :href="route('admin.schedules.index')" :active="request()->routeIs('admin.schedules.*')">
                             {{ __('Penjadwalan') }}
                         </x-nav-link>
@@ -43,12 +39,9 @@
                         <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index')">
                             {{ __('Laporan') }}
                         </x-nav-link>
-
-                        {{-- LINK BARU --}}
                         <x-nav-link :href="route('admin.leave.list')" :active="request()->routeIs('admin.leave.*')">
                             {{ __('Manajemen Izin') }}
                         </x-nav-link>
-
                         <x-nav-link :href="route('admin.settings.show')" :active="request()->routeIs('admin.settings.show')">
                             {{ __('Pengaturan') }}
                         </x-nav-link>
@@ -102,12 +95,43 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
+    <!-- Responsive Navigation Menu (Mobile) -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            @if(Auth::user()->role === 'user')
+                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('leave.index')" :active="request()->routeIs('leave.*')">
+                    {{ __('Pengajuan Izin') }}
+                </x-responsive-nav-link>
+            @endif
+            @can('isAdmin')
+                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                    {{ __('Manajemen Pengguna') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.shifts.index')" :active="request()->routeIs('admin.shifts.*')">
+                    {{ __('Manajemen Shift') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.schedules.index')" :active="request()->routeIs('admin.schedules.*')">
+                    {{ __('Penjadwalan') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.attendances.index')" :active="request()->routeIs('admin.attendances.*')">
+                    {{ __('Riwayat Absensi') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index')">
+                    {{ __('Laporan') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.leave.list')" :active="request()->routeIs('admin.leave.*')">
+                    {{ __('Manajemen Izin') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.settings.show')" :active="request()->routeIs('admin.settings.show')">
+                    {{ __('Pengaturan') }}
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->
