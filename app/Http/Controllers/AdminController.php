@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Log; // <-- Tambahkan Log Facade
 
 class AdminController extends Controller
 {
-    // ... (method dashboard, index, create, store, show, edit, update, destroy tetap sama) ...
+    /**
+     * Menampilkan dashboard admin.
+     */
     public function dashboard()
     {
         // 1. Ambil semua absensi untuk hari ini
@@ -53,7 +55,6 @@ class AdminController extends Controller
                  return Carbon::parse($attendance->check_in_time)->isAfter($deadline);
             } catch (\Exception $e) {
                 // Jika parsing gagal, anggap tidak telat atau log error
-                 report($e); // Laporkan error jika perlu
                  return false;
             }
         })->count();
@@ -259,7 +260,6 @@ class AdminController extends Controller
 
         foreach ($leaveRequests as $leave) {
             // Filter tanggal leave request agar sesuai rentang filter utama
-            // FIX: Handle null $startDate and $endDate correctly
             $leaveStartCarbon = Carbon::parse($leave->start_date);
             $leaveEndCarbon = Carbon::parse($leave->end_date);
 
@@ -269,7 +269,6 @@ class AdminController extends Controller
 
             // Buat periode hanya untuk tanggal yang relevan
             if ($leaveStartDate->lte($leaveEndDate)) {
-                // Fix: Use CarbonPeriod directly with Carbon instances
                 $period = CarbonPeriod::create($leaveStartDate, $leaveEndDate);
                 foreach ($period as $date) {
                     // Hanya proses jika tanggal berada dalam rentang filter (jika filter aktif)
@@ -355,12 +354,6 @@ class AdminController extends Controller
             // Jika ada shift, cek absensi untuk shift tersebut
              $alreadyAttendedQuery->where('shift_id', $shiftId);
         }
-        // Jika tidak ada shift, kita anggap bisa ada beberapa absensi manual tanpa shift ID
-        // Anda bisa tambahkan logika di sini jika tidak ingin ada duplikat manual di hari yg sama tanpa shift
-        // else {
-        //     $alreadyAttendedQuery->whereNull('shift_id');
-        // }
-
 
         $alreadyAttended = $alreadyAttendedQuery->exists();
 
@@ -375,17 +368,12 @@ class AdminController extends Controller
             return back()->withInput()->with('error', 'Pengguna sedang dalam masa izin/cuti pada tanggal tersebut.');
         }
 
-        // Error jika sudah absen di shift yang sama ATAU jika tidak ada shift tapi sudah ada absensi manual lain di hari itu
+        // Error jika sudah absen di shift yang sama
         if ($alreadyAttended) {
             if ($shiftId) {
                 return back()->withInput()->with('error', 'Pengguna sudah memiliki catatan absensi pada tanggal dan shift tersebut.');
             }
-             // Anda bisa uncomment baris di bawah jika ingin mencegah >1 absensi manual tanpa shift di hari yg sama
-             // else {
-             //     return back()->withInput()->with('error', 'Pengguna sudah memiliki catatan absensi manual pada tanggal tersebut.');
-             // }
         }
-
 
         // Tentukan status berdasarkan shift (jika ada) atau setting global
         $status = 'Manual'; // Default status jika manual atau tidak ada shift/setting
@@ -423,32 +411,70 @@ class AdminController extends Controller
     }
 
     /**
-     * Menampilkan halaman pengaturan jadwal kerja.
+     * Menampilkan halaman pengaturan jadwal kerja dan lokasi.
+     * --- BAGIAN INI TELAH DIPERBAIKI ---
      */
     public function showSettings()
     {
-        // Ambil pengaturan sebagai collection agar lebih mudah diakses
+        // Ambil semua pengaturan
         $settings = Setting::pluck('value', 'key');
-        // Berikan nilai default jika key tidak ditemukan
+        
+        // Ambil Jam Kerja (Default 08:00)
         $workStartTime = $settings->get('work_start_time', '08:00');
+        
+        // Ambil Pengaturan Lokasi
+        $officeLatitude = $settings->get('office_latitude');
+        $officeLongitude = $settings->get('office_longitude');
+        $officeRadius = $settings->get('office_radius', 50); // Default 50 meter jika belum diset
 
-        return view('admin.settings.index', compact('workStartTime'));
+        // Kirim semua variabel ke view
+        return view('admin.settings.index', compact('workStartTime', 'officeLatitude', 'officeLongitude', 'officeRadius'));
     }
 
 
     /**
-     * Menyimpan perubahan pengaturan jadwal kerja.
+     * Menyimpan perubahan pengaturan jadwal kerja dan lokasi.
+     * --- BAGIAN INI TELAH DIPERBAIKI ---
      */
     public function updateSettings(Request $request)
     {
         $request->validate([
             'work_start_time' => 'required|date_format:H:i',
+            // Validasi untuk lokasi (nullable karena opsional)
+            'office_latitude' => 'nullable|numeric',
+            'office_longitude' => 'nullable|numeric',
+            'office_radius' => 'nullable|numeric|min:10', // Minimal radius 10 meter agar masuk akal
         ]);
 
+        // Simpan Jam Kerja
         Setting::updateOrCreate(
             ['key' => 'work_start_time'],
             ['value' => $request->work_start_time]
         );
+
+        // Simpan Latitude
+        if ($request->filled('office_latitude')) {
+            Setting::updateOrCreate(
+                ['key' => 'office_latitude'],
+                ['value' => $request->office_latitude]
+            );
+        }
+
+        // Simpan Longitude
+        if ($request->filled('office_longitude')) {
+            Setting::updateOrCreate(
+                ['key' => 'office_longitude'],
+                ['value' => $request->office_longitude]
+            );
+        }
+
+        // Simpan Radius
+        if ($request->filled('office_radius')) {
+            Setting::updateOrCreate(
+                ['key' => 'office_radius'],
+                ['value' => $request->office_radius]
+            );
+        }
 
         return redirect()->route('admin.settings.show')->with('success', 'Pengaturan berhasil diperbarui.');
     }
