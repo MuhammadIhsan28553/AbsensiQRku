@@ -18,7 +18,7 @@
                         </h3>
                         <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                             Arahkan kode QR absensi Anda ke area pindai di samping. Pastikan pencahayaan cukup dan kode QR terlihat jelas di dalam kotak.
-                            <br><span class="text-red-500 font-bold">*Pastikan izin lokasi (GPS) aktif.</span>
+                            <br><span class="text-red-500 font-bold">*Pastikan izin lokasi (GPS) aktif dan diizinkan di browser.</span>
                         </p>
                     </div>
                     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -26,9 +26,9 @@
                              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                                 Status
                             </h3>
-                            {{-- Area untuk menampilkan hasil scan dengan styling modern --}}
+                            {{-- Area untuk menampilkan hasil scan --}}
                             <div id="qr-reader-results" class="min-h-[60px] flex items-center justify-center p-4 rounded-md bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
-                                <span class="text-sm text-gray-500">Arahkan kamera ke kode QR...</span>
+                                <span class="text-sm text-gray-500">Menunggu inisialisasi...</span>
                             </div>
                         </div>
                     </div>
@@ -48,13 +48,16 @@
 
     <script>
         const resultContainer = document.getElementById('qr-reader-results');
-        let lastResult = null;
-        let html5QrcodeScanner; // Definisikan di scope yang lebih luas
+        let html5QrcodeScanner;
+        
+        // --- Variabel Global untuk Lokasi ---
+        let userLat = null;
+        let userLng = null;
+        let locationError = null;
 
-        // --- Fungsi untuk membuat template feedback ---
+        // --- Fungsi Helper Feedback UI ---
         function createFeedbackHtml(type, message) {
             let icon, colorClass;
-
             switch (type) {
                 case 'loading':
                     icon = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
@@ -72,55 +75,99 @@
             return `<div class="flex items-center font-semibold ${colorClass}">${icon} ${message}</div>`;
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Mencegah scan berulang-ulang dengan cepat
-            if (decodedText !== lastResult) {
-                lastResult = decodedText;
+        // --- 1. Request Lokasi Saat Halaman Dimuat (UTAMA) ---
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Tampilkan status sedang mencari lokasi
+            resultContainer.innerHTML = createFeedbackHtml('loading', 'Meminta izin lokasi GPS...');
 
-                // Hentikan scanner agar tidak terus memindai
-                html5QrcodeScanner.pause();
-
-                // 1. Tampilkan status loading mencari lokasi
-                resultContainer.innerHTML = createFeedbackHtml('loading', 'Mendapatkan lokasi GPS...');
-
-                // 2. Ambil Lokasi GPS Browser
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(function(position) {
-                        // --- SUKSES DAPAT LOKASI ---
-                        const latitude = position.coords.latitude;
-                        const longitude = position.coords.longitude;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // Success Callback: Lokasi Ditemukan
+                    function(position) {
+                        userLat = position.coords.latitude;
+                        userLng = position.coords.longitude;
+                        console.log("Lokasi didapat:", userLat, userLng);
                         
-                        // Lanjut kirim ke server
-                        sendAttendanceData(decodedText, latitude, longitude);
-
-                    }, function(error) {
-                        // --- GAGAL DAPAT LOKASI ---
-                        let errorMsg = "Gagal mendapatkan lokasi GPS.";
-                        if (error.code === error.PERMISSION_DENIED) {
-                            errorMsg = "Izin lokasi ditolak. Harap aktifkan GPS browser.";
-                        } else if (error.code === error.POSITION_UNAVAILABLE) {
-                            errorMsg = "Informasi lokasi tidak tersedia.";
-                        } else if (error.code === error.TIMEOUT) {
-                            errorMsg = "Waktu permintaan lokasi habis.";
+                        resultContainer.innerHTML = createFeedbackHtml('success', 'Lokasi siap! Silakan scan QR Code.');
+                        
+                        // Inisialisasi scanner setelah lokasi didapat
+                        initScanner();
+                    }, 
+                    // Error Callback: Gagal Dapat Lokasi
+                    function(error) {
+                        let msg = "Gagal mendapatkan lokasi.";
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                msg = "Izin lokasi ditolak. Harap reset izin situs ini di pengaturan browser.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                msg = "Informasi lokasi tidak tersedia di perangkat ini.";
+                                break;
+                            case error.TIMEOUT:
+                                msg = "Waktu permintaan lokasi habis. Coba refresh halaman.";
+                                break;
                         }
+                        locationError = msg;
+                        resultContainer.innerHTML = createFeedbackHtml('error', msg);
                         
-                        resultContainer.innerHTML = createFeedbackHtml('error', errorMsg);
+                        // Tampilkan alert agar user sadar
+                        alert(msg);
                         
-                        // Izinkan scan lagi setelah 3 detik
-                        setTimeout(() => { 
-                            lastResult = null; 
-                            html5QrcodeScanner.resume(); 
-                        }, 3000);
-                    });
-                } else {
-                    resultContainer.innerHTML = createFeedbackHtml('error', 'Browser Anda tidak mendukung GPS.');
-                }
+                        // Tetap jalankan scanner, tapi nanti akan error saat scan
+                        initScanner();
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                locationError = "Browser ini tidak mendukung fitur GPS.";
+                resultContainer.innerHTML = createFeedbackHtml('error', locationError);
+                alert(locationError);
             }
+        });
+
+        // --- Inisialisasi Scanner ---
+        function initScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "qr-reader", 
+                { fps: 10, qrbox: {width: 250, height: 250} }, 
+                false
+            );
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
-        // Fungsi terpisah untuk mengirim data ke server
+        // --- 2. Callback Saat QR Berhasil Discan ---
+        function onScanSuccess(decodedText, decodedResult) {
+            // Pause scanner agar tidak scan berkali-kali
+            html5QrcodeScanner.pause();
+
+            // Cek apakah lokasi sudah tersedia?
+            if (userLat === null || userLng === null) {
+                let msg = locationError ? locationError : "Sedang mengambil lokasi... Tunggu sebentar.";
+                resultContainer.innerHTML = createFeedbackHtml('error', msg);
+                
+                // Jika error belum pasti (masih loading), beri tahu user
+                if (!locationError) {
+                    alert("Lokasi belum ditemukan. Pastikan GPS aktif dan tunggu sebentar.");
+                } else {
+                    alert(msg);
+                }
+
+                // Resume scanner setelah 3 detik
+                setTimeout(() => html5QrcodeScanner.resume(), 3000);
+                return;
+            }
+
+            // Jika lokasi aman, kirim data ke server
+            sendAttendanceData(decodedText, userLat, userLng);
+        }
+
+        function onScanFailure(error) {
+            // Biarkan kosong
+        }
+
+        // --- 3. Kirim Data ke Server ---
         function sendAttendanceData(token, lat, lng) {
-            resultContainer.innerHTML = createFeedbackHtml('loading', 'Memvalidasi & menyimpan...');
+            resultContainer.innerHTML = createFeedbackHtml('loading', 'Memvalidasi Absensi...');
 
             fetch('{{ route("scan.record") }}', {
                 method: 'POST',
@@ -138,44 +185,23 @@
             .then(data => {
                 if (data.success) {
                     resultContainer.innerHTML = createFeedbackHtml('success', data.message);
-                    // Hentikan total scanner setelah berhasil
-                    html5QrcodeScanner.clear();
-                    // Alihkan ke dashboard setelah 2 detik
-                    setTimeout(() => {
-                        window.location.href = '{{ route("dashboard") }}';
-                    }, 2000);
+                    html5QrcodeScanner.clear(); // Hapus scanner
+                    
+                    // Redirect ke dashboard setelah 2 detik
+                    setTimeout(() => window.location.href = '{{ route("dashboard") }}', 2000);
                 } else {
                     resultContainer.innerHTML = createFeedbackHtml('error', data.message);
-                    // Izinkan scan lagi setelah 3 detik agar user sempat baca error
-                    setTimeout(() => {
-                        lastResult = null;
-                        html5QrcodeScanner.resume(); 
-                    }, 3000);
+                    alert(data.message); // Munculkan pesan error (misal: Jarak Terlalu Jauh)
+                    
+                    // Resume scanner setelah 3 detik
+                    setTimeout(() => html5QrcodeScanner.resume(), 3000);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 resultContainer.innerHTML = createFeedbackHtml('error', 'Terjadi kesalahan sistem.');
-                setTimeout(() => {
-                    lastResult = null;
-                    html5QrcodeScanner.resume();
-                }, 3000);
+                setTimeout(() => html5QrcodeScanner.resume(), 3000);
             });
         }
-
-        function onScanFailure(error) {
-            // Tidak melakukan apa-apa saat gagal (misal tidak menemukan QR code)
-        }
-
-        // Inisialisasi scanner saat dokumen dimuat
-        document.addEventListener('DOMContentLoaded', (event) => {
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "qr-reader",
-                { fps: 10, qrbox: {width: 250, height: 250} },
-                false // verbose
-            );
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        });
-
     </script>
 </x-app-layout>
