@@ -57,17 +57,20 @@ class ScanController extends Controller
         // Ambil pengaturan kantor dari database (Setting)
         $officeLat = Setting::where('key', 'office_latitude')->value('value');
         $officeLng = Setting::where('key', 'office_longitude')->value('value');
-        $maxRadius = Setting::where('key', 'office_radius')->value('value') ?? 100; // Default 100 meter
+        
+        // Default radius 50 meter jika belum diset di database
+        $maxRadius = Setting::where('key', 'office_radius')->value('value') ?? 50; 
 
         $distance = 0;
         // Hanya cek lokasi jika admin sudah mengatur koordinat kantor
         if ($officeLat && $officeLng) {
             $distance = $this->calculateDistance($userLatitude, $userLongitude, $officeLat, $officeLng);
             
+            // Logika Penolakan: Jika jarak pengguna > radius yang diizinkan
             if ($distance > $maxRadius) {
                  return response()->json([
                     'success' => false,
-                    'message' => "Anda berada di luar jangkauan kantor. Jarak: " . round($distance) . "m (Maks: {$maxRadius}m)."
+                    'message' => "Gagal! Posisi Anda terlalu jauh dari kantor. Jarak: " . round($distance) . "m (Maks: {$maxRadius}m)."
                 ]);
             }
         }
@@ -120,7 +123,7 @@ class ScanController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Absensi untuk {$shift->name} berhasil! Status: {$status}."
+            'message' => "Absensi untuk {$shift->name} berhasil! Status: {$status}. (Jarak: " . round($distance) . "m)"
         ]);
     }
 
